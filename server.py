@@ -38,8 +38,13 @@ def put_rating(entity):
 
 	# Update the rating for the entity
 	key = '/rating/'+entity
-	client.set(key, rating)
 
+	#client.set(key, rating)
+	
+	client.hmset(source, {'tea':entity,'rating':rating })
+	
+	#r.hmset('neha', {'tea':'a','rating':20,'avg':15})
+	#r.hmset('ted', {'tea':'b','rating':30,'avg':30})
 	# Return the new rating for the entity
 	return {
 		"rating": rating
@@ -52,8 +57,32 @@ def put_rating(entity):
 # { rating: 5 }
 @route('/rating/<entity>', method='GET')
 def get_rating(entity):
+
+	keys = client.keys('*')
+	prev_sum=0
+	count=0
+	search_tea = entity
+	for key in keys:
+        	if client.type(key) == 'hash':
+			#vals = client.hgetall(key)
+        		#print float(client.hmget(key,'rating'))
+		
+			rate = float(client.hmget(key,'rating')[0])
+			#print client.type(key),
+        		tea = client.hmget(key,'tea')[0]
+
+        		if tea == search_tea:
+                	#print 'calculate tea : ', tea, rate
+                		prev_sum=prev_sum+rate
+                		count=count+1
+	
+	if count ==0:
+		avg_rate = 0
+	else:
+		avg_rate=prev_sum/count
+
 	return {
-		"rating": client.get('/rating/'+entity)
+		"rating": avg_rate
 	}
 
 # Add a route for deleting all the rating information which can be accessed as:
